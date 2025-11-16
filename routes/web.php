@@ -1,16 +1,38 @@
 <?php
 
+use App\Http\Controllers\FlightStatusController;
+use App\Http\Controllers\AirportStatusController;
+use App\Http\Controllers\NotamController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+    
 Route::get('/', function () {
+    return Inertia::render('auth/login');
+});
+
+Route::get('/home', function () {
     return Inertia::render('welcome');
 })->name('home');
+
+//Flight status Route
+Route::get('/FlightStatus/Index', [FlightStatusController::class, 'index'])
+    ->name('FlightStatus.index');
+
+//airport status route
+Route::get('/AirportStatus/Index', [AirportStatusController::class, 'index'])
+    ->name('flight.status.index');
+
+//for Notams functions
+Route::post('/notams/generate', [NotamController::class, 'generate']);
+Route::get('/notams', [NotamController::class, 'index']);
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
+
+
 });
 
 require __DIR__.'/settings.php';
