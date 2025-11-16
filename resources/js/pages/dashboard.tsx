@@ -16,7 +16,6 @@ import {
     FaTint,
     FaWind,
 } from 'react-icons/fa';
-import { queryParams, type RouteQueryOptions } from '@/wayfinder';
 
 //render icons based on conditions
 const getWeatherIcon = (condition: string) => {

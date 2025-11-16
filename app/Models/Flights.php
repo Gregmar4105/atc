@@ -9,7 +9,6 @@ class Flights extends Model
     // If your table name follows Laravel conventions (plural lowercase, e.g., "flights"), this is optional
     protected $table = 'flights';
 
-    // If your primary key is not "id", specify it here
     protected $primaryKey = 'id';
 
     // If you want to allow mass assignment

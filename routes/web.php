@@ -22,9 +22,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
 
-//Flight status Route
 Route::get('/FlightStatus/Index', [FlightStatusController::class, 'index'])
     ->name('FlightStatus.index');
+Route::post('/FlightStatus/update-status', [FlightStatusController::class, 'updateStatus'])
+    ->name('flights.updateStatus');
+    
+
+// Update flight status API
+Route::post('/FlightStatus/update-status', [FlightStatusController::class, 'updateStatus'])
+    ->name('FlightStatus.updateStatus');
 
 //airport status route
 Route::get('/AirportStatus/Index', [AirportStatusController::class, 'index'])
@@ -35,7 +41,8 @@ Route::post('/notams/generate', [NotamController::class, 'generate']);
 Route::get('/notams', [NotamController::class, 'index'])->name('notams.index');
 Route::put('/notams/{notam}', [NotamController::class, 'update'])->name('notams.update');
 Route::get('/notams/edit', [NotamController::class, 'edit'])->name('notams.update');
-// For updating (PUT request to save changes)
+Route::delete('/notams/{notam}', [NotamController::class, 'destroy'])->name('notams.destroy');
+
 
 
 
