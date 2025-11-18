@@ -32,16 +32,32 @@ import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-react';
+import { BookOpen, CheckCircle, Folder, FolderIcon, LayoutDashboard, LayoutGrid, Menu, Search } from 'lucide-react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
+import { PlaneFillIcon } from './shadcn-icons/akar-icons-plane-fill';
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: dashboard(),
-        icon: LayoutGrid,
+        icon: LayoutDashboard,
     },
+    {
+        title: 'Flights Status',
+        href: '/FlightStatus/Index',
+        icon: PlaneFillIcon as any,
+    },
+    {
+        title: 'Airport Status',
+        href: '/AirportStatus/Index',
+        icon: CheckCircle,
+    },
+    {
+        title: 'Notams',
+        href: '/notams/',
+        icon: FolderIcon as any,
+    }
 ];
 
 const rightNavItems: NavItem[] = [
@@ -153,7 +169,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                     </Link>
 
                     {/* Desktop Navigation */}
-                    <div className="ml-6 hidden h-full items-center space-x-6 lg:flex">
+                    <div className="ml-40 hidden h-full items-center space-x-6 lg:flex">
                         <NavigationMenu className="flex h-full items-stretch">
                             <NavigationMenuList className="flex h-full items-stretch space-x-2">
                                 {mainNavItems.map((item, index) => (
