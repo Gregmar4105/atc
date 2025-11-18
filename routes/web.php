@@ -6,12 +6,12 @@ use App\Http\Controllers\NotamController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-    
+    /*
 Route::get('/', function () {
     return Inertia::render('auth/login');
-});
+});*/
 
-Route::get('/home', function () {
+Route::get('/', function () {
     return Inertia::render('welcome');
 })->name('home');
 
