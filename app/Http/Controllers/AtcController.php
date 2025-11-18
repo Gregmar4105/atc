@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Flights;
+use Illuminate\Support\Facades\DB;
 
 
 class AtcController extends Controller
@@ -18,8 +19,17 @@ class AtcController extends Controller
             'status_id' => 'required|integer|in:1,2,3,4', // 1=Scheduled,2=Delayed,3=Re-route,4=Cleared
         ]);
 
-        Flights::whereIn('id', $request->flight_ids)
-            ->update(['status_id' => $request->status_id]);
+        DB::beginTransaction();
+
+        try {
+            Flights::whereIn('id', $request->flight_ids)
+                ->update(['status_id' => $request->status_id]);
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
 
         return response()->json([
             'success' => true,

@@ -8,14 +8,25 @@ use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 use App\Services\NotamGenerator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class NotamController extends Controller
 {
     // Show all NOTAMs
     public function index()
     {
+        DB::beginTransaction();
+
+        try {
+            $notams = Notam::with('airport')->latest()->get();
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
+
         return Inertia::render('Notams/Index', [
-            'notams' => Notam::with('airport')->latest()->get(),
+            'notams' => $notams,
         ]);
     }
 
@@ -27,7 +38,15 @@ class NotamController extends Controller
             return redirect()->route('notams.index')->with('error', 'NOTAM ID is required.');
         }
 
-        $notam = Notam::findOrFail($notamId);
+        DB::beginTransaction();
+
+        try {
+            $notam = Notam::findOrFail($notamId);
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
 
         return Inertia::render('Notams/Edit', [
             'notam' => $notam,
@@ -41,9 +60,18 @@ class NotamController extends Controller
             'message' => 'required|string|max:1000',
         ]);
 
-        $notam->update([
-            'message' => $request->message,
-        ]);
+        DB::beginTransaction();
+
+        try {
+            $notam->update([
+                'message' => $request->message,
+            ]);
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
 
         try {
             Http::post('https://n8n.larable.dev/webhook/78988c9e-532f-43ea-82f0-cca56a6f5a69', [
@@ -63,30 +91,34 @@ class NotamController extends Controller
     //delete
     public function destroy(Notam $notam)
     {
-        try {
-            $notamData = [
-                'airport_id' => $notam->airport_id,
-                'city'       => $notam->city,
-                'message'    => $notam->message,
-                'query'    => 'delete',
-            ];
+        $notamData = [
+            'airport_id' => $notam->airport_id,
+            'city'       => $notam->city,
+            'message'    => $notam->message,
+            'query'    => 'delete',
+        ];
 
+        DB::beginTransaction();
+
+        try {
             // Delete the NOTAM locally
             $notam->delete();
-
-            // Call the n8n webhook to notify deletion
-            try {
-                Http::post('https://n8n.larable.dev/webhook/a8ec4401-c4d5-4bc9-9db4-971c2fd682f3', $notamData);
-            } catch (\Exception $e) {
-                Log::error('Failed to call n8n webhook on NOTAM delete: ' . $e->getMessage());
-            }
-
-            return redirect()->route('notams.index')
-                ->with('success', 'NOTAM deleted successfully.');
-        } catch (\Exception $e) {
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
             return redirect()->route('notams.index')
                 ->with('error', 'Failed to delete NOTAM: ' . $e->getMessage());
         }
+
+        // Call the n8n webhook to notify deletion
+        try {
+            Http::post('https://n8n.larable.dev/webhook/a8ec4401-c4d5-4bc9-9db4-971c2fd682f3', $notamData);
+        } catch (\Exception $e) {
+            Log::error('Failed to call n8n webhook on NOTAM delete: ' . $e->getMessage());
+        }
+
+        return redirect()->route('notams.index')
+            ->with('success', 'NOTAM deleted successfully.');
     }
 
 
@@ -141,20 +173,32 @@ class NotamController extends Controller
                 "F) Weather Report: {$weatherData['weather'][0]['description']}. " .
                 "Wind: {$windSpeed} m/s. {$advice}\n";
 
-            $existing = Notam::where('airport_id', $airport['iata_code'])
-                ->where('message', $message)
-                ->first();
+            try {
+                DB::beginTransaction();
 
-            if ($existing) {
-                $errors[] = "{$airport['iata_code']} – Duplicate skipped";
+                $existing = Notam::where('airport_id', $airport['iata_code'])
+                    ->where('message', $message)
+                    ->first();
+
+                if ($existing) {
+                    DB::rollBack();
+                    $errors[] = "{$airport['iata_code']} – Duplicate skipped";
+                    continue;
+                }
+
+                $notam = Notam::create([
+                    'airport_id' => $airport['iata_code'],
+                    'city'       => $airport['city'],
+                    'message'    => $message,
+                ]);
+
+                DB::commit();
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                $failed++;
+                $errors[] = "{$airport['iata_code']} – Database error: {$e->getMessage()}";
                 continue;
             }
-
-            $notam = Notam::create([
-                'airport_id' => $airport['iata_code'],
-                'city'       => $airport['city'],
-                'message'    => $message,
-            ]);
 
             Http::post('https://n8n.larable.dev/webhook/7789106c-df1f-4ead-b8b8-16332151bd99', [
                 'airport_id' => $notam->airport_id,

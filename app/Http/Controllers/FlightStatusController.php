@@ -15,27 +15,36 @@ class FlightStatusController extends Controller
      */
     public function index()
     {
-        $flights = Flights::all()->map(function ($flight) {
-            $statusText = match ($flight->status_id) {
-                2 => 'Delayed',
-                3 => 'Re-route',
-                4 => 'Clear for Landing',
-                default => 'Scheduled',
-            };
+        DB::beginTransaction();
 
-            return [
-                'id' => $flight->id,
-                'flight_number' => $flight->flight_number,
-                'airline_code' => $flight->airline_code,
-                'origin_code' => $flight->origin_code,
-                'destination_code' => $flight->destination_code,
-                'aircraft_icao_code' => $flight->aircraft_icao_code,
-                'scheduled_departure_time' => $flight->scheduled_departure_time,
-                'scheduled_arrival_time' => $flight->scheduled_arrival_time,
-                'status_id' => $flight->status_id,
-                'status_text' => $statusText,
-            ];
-        });
+        try {
+            $flights = Flights::all()->map(function ($flight) {
+                $statusText = match ($flight->status_id) {
+                    2 => 'Delayed',
+                    3 => 'Re-route',
+                    4 => 'Clear for Landing',
+                    default => 'Scheduled',
+                };
+
+                return [
+                    'id' => $flight->id,
+                    'flight_number' => $flight->flight_number,
+                    'airline_code' => $flight->airline_code,
+                    'origin_code' => $flight->origin_code,
+                    'destination_code' => $flight->destination_code,
+                    'aircraft_icao_code' => $flight->aircraft_icao_code,
+                    'scheduled_departure_time' => $flight->scheduled_departure_time,
+                    'scheduled_arrival_time' => $flight->scheduled_arrival_time,
+                    'status_id' => $flight->status_id,
+                    'status_text' => $statusText,
+                ];
+            });
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
 
         return Inertia::render('FlightStatus/Index', [
             'flights' => $flights,
@@ -54,6 +63,8 @@ class FlightStatusController extends Controller
         'flight_ids.*' => 'required|integer|exists:flights,id',
         'status_id' => 'required|integer|in:1,2,3,4', // 1 = Scheduled
     ]);
+
+    DB::beginTransaction();
 
     try {
         $statusId = $request->status_id;
@@ -91,10 +102,13 @@ class FlightStatusController extends Controller
             );
         }
 
+        DB::commit();
+
         return redirect()->route('FlightStatus.index')
             ->with('success', "Updated status for {$updatedCount} flight(s).");
 
     } catch (\Exception $e) {
+        DB::rollBack();
         Log::error('Flight status update failed: ' . $e->getMessage());
         return redirect()->back()->with('error', 'Failed to update flight status.');
     }
