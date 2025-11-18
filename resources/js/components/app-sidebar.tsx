@@ -15,26 +15,35 @@ import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import { BookOpen, Folder, LayoutGrid } from 'lucide-react';
 import AppLogo from './app-logo';
-
+import { PlaneFillIcon } from "@/components/shadcn-icons/akar-icons-plane-fill";
+import { FolderIcon } from "@/components/shadcn-icons/akar-icons-folder";
+import { LayoutDashboard,CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 const mainNavItems: NavItem[] = [
+    {
+        title: 'Flights Status',
+        href: '/FlightStatus/Index',
+        icon: PlaneFillIcon as any,
+    },
+    {
+        title: 'Airport Status',
+        href: '/AirportStatus/Index',
+        icon: CheckCircle,
+    },
+    {
+        title: 'Notams',
+        href: '/notams/',
+        icon: FolderIcon as any,
+    },
     {
         title: 'Dashboard',
         href: dashboard(),
-        icon: LayoutGrid,
-    },
+        icon: LayoutDashboard,
+    }
+    
 ];
 
 const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: Folder,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
-    },
+   
 ];
 
 export function AppSidebar() {
